@@ -1,0 +1,278 @@
+-- MinMenuGui — compact, mobil-friendly
+local Players           = game:GetService("Players")
+local UserInputService  = game:GetService("UserInputService")
+local TweenService      = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player    = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Culori
+local C = {
+	primary  = Color3.fromRGB(0, 120, 215),
+	primHov  = Color3.fromRGB(0, 150, 255),
+	success  = Color3.fromRGB(30, 180, 60),
+	bg       = Color3.fromRGB(20, 20, 25),
+	bgSec    = Color3.fromRGB(30, 30, 38),
+	bgBtn    = Color3.fromRGB(45, 45, 55),
+	bgBtnHov = Color3.fromRGB(65, 65, 78),
+	border   = Color3.fromRGB(70, 70, 90),
+	text     = Color3.fromRGB(230, 230, 235),
+}
+
+local TW_FAST = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local TW_MED  = TweenInfo.new(0.20, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+-- Helpers
+local function corner(p, r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, r or 5)
+	c.Parent = p
+end
+
+local function stroke(p, col, th)
+	local s = Instance.new("UIStroke")
+	s.Color = col or C.border
+	s.Thickness = th or 1
+	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	s.Parent = p
+end
+
+local function padding(p, px)
+	local pad = Instance.new("UIPadding")
+	local u = UDim.new(0, px)
+	pad.PaddingTop, pad.PaddingBottom = u, u
+	pad.PaddingLeft, pad.PaddingRight = u, u
+	pad.Parent = p
+end
+
+local function hover(btn, norm, hov)
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TW_FAST, { BackgroundColor3 = hov }):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TW_FAST, { BackgroundColor3 = norm }):Play()
+	end)
+end
+
+-- ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "MinMenuGui"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = playerGui
+
+-- Container draggable
+local container = Instance.new("Frame")
+container.Name = "Container"
+container.Size = UDim2.new(0, 180, 0, 0)
+container.Position = UDim2.new(0, 12, 0, 12)
+container.BackgroundTransparency = 1
+container.Parent = gui
+
+-- Buton toggle
+local mainBtn = Instance.new("TextButton")
+mainBtn.Size = UDim2.new(1, 0, 0, 36)
+mainBtn.BackgroundColor3 = C.primary
+mainBtn.TextColor3 = C.text
+mainBtn.TextSize = 12
+mainBtn.Font = Enum.Font.GothamBold
+mainBtn.Text = "MENIU"
+mainBtn.BorderSizePixel = 0
+mainBtn.AutoButtonColor = false
+mainBtn.Parent = container
+corner(mainBtn, 6)
+stroke(mainBtn, C.border)
+hover(mainBtn, C.primary, C.primHov)
+
+-- Meniu frame
+local menuFrame = Instance.new("Frame")
+menuFrame.Size = UDim2.new(1, 0, 0, 0)
+menuFrame.Position = UDim2.new(0, 0, 0, 40)
+menuFrame.BackgroundColor3 = C.bg
+menuFrame.BorderSizePixel = 0
+menuFrame.ClipsDescendants = true
+menuFrame.Parent = container
+corner(menuFrame, 6)
+stroke(menuFrame, C.border)
+
+-- Scroll frame
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, 0, 1, 0)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 3
+scrollFrame.ScrollBarImageColor3 = C.primary
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollFrame.Parent = menuFrame
+padding(scrollFrame, 5)
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 5)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = scrollFrame
+
+-- Creare sectiuni
+local function createSection(title, buttons, order)
+	local section = Instance.new("Frame")
+	section.Name = title
+	section.Size = UDim2.new(1, 0, 0, 0)
+	section.AutomaticSize = Enum.AutomaticSize.Y
+	section.BackgroundColor3 = C.bgSec
+	section.BorderSizePixel = 0
+	section.LayoutOrder = order
+	section.Parent = scrollFrame
+	corner(section, 5)
+	stroke(section, Color3.fromRGB(55, 55, 75))
+	padding(section, 4)
+
+	local inner = Instance.new("UIListLayout")
+	inner.Padding = UDim.new(0, 3)
+	inner.Parent = section
+
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, 0, 0, 22)
+	header.BackgroundColor3 = C.primary
+	header.TextColor3 = C.text
+	header.TextSize = 10
+	header.Font = Enum.Font.GothamBold
+	header.Text = string.upper(title)
+	header.BorderSizePixel = 0
+	header.LayoutOrder = 0
+	header.Parent = section
+	corner(header, 3)
+
+	for i, data in ipairs(buttons) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 26)
+		btn.BackgroundColor3 = C.bgBtn
+		btn.TextColor3 = C.text
+		btn.TextSize = 11
+		btn.Font = Enum.Font.Gotham
+		btn.Text = data.name
+		btn.BorderSizePixel = 0
+		btn.AutoButtonColor = false
+		btn.LayoutOrder = i
+		btn.Parent = section
+		corner(btn, 3)
+		hover(btn, C.bgBtn, C.bgBtnHov)
+
+		btn.MouseButton1Click:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.08), { BackgroundColor3 = C.primary }):Play()
+			task.delay(0.15, function()
+				TweenService:Create(btn, TW_FAST, { BackgroundColor3 = C.bgBtn }):Play()
+			end)
+			local ok, err = pcall(data.callback)
+			if not ok then
+				warn("[MinMenuGui] Eroare '" .. data.name .. "': " .. tostring(err))
+			end
+		end)
+	end
+end
+
+-- Date sectiuni
+createSection("Powerups", {
+	{ name = "Sprint", callback = function() ReplicatedStorage.ShopEvents.Equip:FireServer("Sprint") end },
+	{ name = "Wall",   callback = function() ReplicatedStorage.ShopEvents.Equip:FireServer("Wall")   end },
+	{ name = "Invis",  callback = function() ReplicatedStorage.ShopEvents.Equip:FireServer("Invis")  end },
+	{ name = "Swap",   callback = function() ReplicatedStorage.ShopEvents.Equip:FireServer("Swap")   end },
+}, 1)
+
+createSection("Skins", {
+	{ name = "Green", callback = function() ReplicatedStorage.ShopEvents.EquipTractor:FireServer("Green") end },
+	{ name = "Red",   callback = function() ReplicatedStorage.ShopEvents.EquipTractor:FireServer("Red")   end },
+	{ name = "White", callback = function() ReplicatedStorage.ShopEvents.EquipTractor:FireServer("White") end },
+	{ name = "Black", callback = function() ReplicatedStorage.ShopEvents.EquipTractor:FireServer("Black") end },
+	{ name = "House", callback = function() ReplicatedStorage.ShopEvents.EquipTractor:FireServer("House") end },
+	{ name = "Tank",  callback = function() ReplicatedStorage.ShopEvents.EquipTractor:FireServer("Tank")  end },
+}, 2)
+
+createSection("Teleport", {
+	{ name = "La Tractor", callback = function()
+		local char = player.Character
+		if not char then return end
+		local tractor = workspace:FindFirstChild("Tractor")
+		if not tractor then warn("[MinMenuGui] Tractor nu exista!") return end
+		local seat = tractor:FindFirstChild("DriveSeat")
+		if not seat then warn("[MinMenuGui] DriveSeat nu exista!") return end
+		char:MoveTo(seat.Position + Vector3.new(0, 3, 0))
+	end },
+}, 3)
+
+-- Calcul inaltime meniu (max 280px pe mobil)
+local MENU_HEIGHT = math.min(
+	listLayout.AbsoluteContentSize.Y + 20,
+	280
+)
+
+-- Toggle
+local menuOpen = false
+
+local function setOpen(open)
+	menuOpen = open
+	local h = open and MENU_HEIGHT or 0
+	TweenService:Create(menuFrame, TW_MED, { Size = UDim2.new(1, 0, 0, h) }):Play()
+	if open then
+		TweenService:Create(mainBtn, TW_FAST, { BackgroundColor3 = C.success }):Play()
+		mainBtn.Text = "INCHIDE"
+	else
+		TweenService:Create(mainBtn, TW_FAST, { BackgroundColor3 = C.primary }):Play()
+		mainBtn.Text = "MENIU"
+	end
+end
+
+mainBtn.MouseButton1Click:Connect(function()
+	setOpen(not menuOpen)
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.Escape and menuOpen then
+		setOpen(false)
+	end
+end)
+
+-- Drag (mouse si touch)
+do
+	local dragging = false
+	local dragStart, startPos
+
+	local function onDragStart(pos)
+		dragging = true
+		dragStart = pos
+		startPos = container.Position
+	end
+
+	local function onDragMove(pos)
+		if not dragging then return end
+		local delta = pos - dragStart
+		if delta.Magnitude > 5 then
+			container.Position = UDim2.new(
+				startPos.X.Scale, startPos.X.Offset + delta.X,
+				startPos.Y.Scale, startPos.Y.Offset + delta.Y
+			)
+		end
+	end
+
+	mainBtn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+			onDragStart(input.Position)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch then
+			onDragMove(input.Position)
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+end
